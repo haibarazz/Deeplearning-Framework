@@ -1,0 +1,22 @@
+# 这个是我们通用的这个超参数管理和设置，不包括具体的模型超参数
+defaults:
+  - model: model1  # 我们对应的在model1里面要设置好model1模型的一些具体参数,如果需要换model2的话，就把这个换成对应的model2即可（在config/models/里面）
+  - _self_
+
+# 数据配置
+data:
+  data_dir: "dataset\\data.csv"
+  batch_size: 128
+  train_ratio: 0.8
+  random_state: 42
+  window_size: 15
+# 训练配置
+training:
+  learning_rate: 0.001
+  epochs: 150
+  weight_decay: 5e-5
+  early_stop_patience: 20
+  task_type : classfication # 默认分类任务
+# 设备配置
+device: "cuda"
+best_model_path: "checkpoints/model.pth"  # 这个是我们的模型参数保存的地址，方便我们后续断点恢复之类的
