@@ -1,15 +1,14 @@
 import pandas as pd
 import numpy as np
 import torch
-from collections import defaultdict
-from torch_geometric.data import HeteroData
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, Dataset
-class FEATURE(object):
-    num_fea = []
-    cat_fea = []
-
-# 数据读取
+from Feature_selected import FEATURE
+from Dataset import BaseDataset
+"""
+准备数据的一个流程
+读取数据-数据集划分-特征归一化-dataset构建
+"""
 
 
 def load_and_preprocess_data(cfg):
@@ -19,6 +18,8 @@ def load_and_preprocess_data(cfg):
     # df = df.iloc[:1000]  # 这个可以帮助我们快速测试自己的模型是否有bug
     # 这里可以用一些就是数据的一些map的操作
     return df
+
+
 def data_process(train_data, test_data, cat_features, num_features):
     """
     数据预处理函数
@@ -67,45 +68,6 @@ def data_process(train_data, test_data, cat_features, num_features):
 
 
 
-def order_data_embedding(df,cat_col,num_col):
-    """
-    order_data_embedding 这是我们对离散变量和这个连续变量进行这个embeding的时候常用的一个辅助函数
-
-    :param df: 输入的数据
-    :param cat_col: 分类特征列名列表
-    :param num_col: 数值特征列名列表
-    """
-    def denseFeature(feat):
-        return {'feat': feat}
-    def sparsFeature(feat, feat_num):
-        return {'feat': feat, 'feat_num': feat_num}
-    feature_columns = [
-        [denseFeature(feat) for feat in num_col], 
-        [sparsFeature(feat, len(df[feat].unique())) for feat in cat_col]]
-    return feature_columns
-
-
-class BaseDataset(Dataset):
-
-    def __init__(self, df):
-        """
-        这个里面也可以放一些数据处理的操作，数据增强之类的
-        """
-        self.df = df.reset_index(drop=True)
-
-        basic_features = FEATURE.num_order_feat + FEATURE.cat_order_feat
-        self.feature = torch.FloatTensor(df[basic_features].values)
-        self.labels = torch.FloatTensor(df['label'].values)
-    
-    def __len__(self):
-        return len(self.df)
-    
-    def __getitem__(self, idx):
-        return {
-            # 基础特征
-            'basic_features': self.feature[idx],
-            'label': self.labels[idx],
-        }
 
 def prepare_data(df,cfg):
 
@@ -117,10 +79,10 @@ def prepare_data(df,cfg):
     # 划分训练测试集
     train_df, test_df = train_test_split(
         df, test_size=1-train_ratio, 
-        random_state=random_state, stratify=df['d2c_label']
+        random_state=random_state, stratify=df[FEATURE.label]
     )
     # 注意数据预处理一定要放在这个划分数据集之后做
-    train_df, test_df,_ = data_process(train_df, test_df, FEATURE.cat_order_feat, FEATURE.num_order_feat+FEATURE.num_debe_feat) #FEATURE.num_true +FEATURE.num_debe_feat
+    train_df, test_df,_ = data_process(train_df, test_df, FEATURE.cat_order_feat, FEATURE.num_order_feat) 
 
     # 创建数据集
     train_dataset = BaseDataset(train_df)

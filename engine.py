@@ -83,13 +83,13 @@ class BaseTrainer:
         self.early_stopping = EarlyStopping(patience=20, delta=1e-6)
         
         # 日志记录
-        self.setup_logging()
+        self.setup_logging(cfg)
         self.training_history = []
         
-    def setup_logging(self):
+    def setup_logging(self,cfg):
         """设置日志记录"""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        log_dir = Path(r"...\result")
+        log_dir = Path(cfg.log_path)
         log_dir.mkdir(exist_ok=True)
         
         self.log_file = log_dir / f"training_{timestamp}.log"
@@ -392,6 +392,7 @@ class BaseTrainer:
             # 保存最佳模型
             if eval_results['loss'] < best_val_loss:
                 best_val_loss = eval_results['loss']
+                Path(self.best_model_path).parent.mkdir(parents=True, exist_ok=True)
                 torch.save({
                     'epoch': epoch,
                     'model_state_dict': self.model.state_dict(),
