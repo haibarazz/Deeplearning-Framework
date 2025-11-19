@@ -1,20 +1,27 @@
 import torch
 import os
 os.environ["HYDRA_FULL_ERROR"] = "1"  # 这个是为了我们用hydra调试时能看到完整的错误信息
-import pandas as pd
-import numpy as np
 from pathlib import Path
 import hydra
 from omegaconf import DictConfig, OmegaConf
 from engine import BaseTrainer
 from Data_pre import load_and_preprocess_data, prepare_data
+from Feature_selected import FEATURE
 
 
 def create_model(df,cfg: DictConfig):
-    # 这个里面用来实例化我们的模型
+    """
+    动态计算输入维度并实例化模型
+    """
+    # 基础特征维度：顺序数值特征 + 顺序离散特征 + 其他数值特征（占位）
+    basic_features = FEATURE.num_order_feat + FEATURE.cat_order_feat
+    input_dim = len(basic_features)
+    # 注意这里，就是有些参数是我们无法事先知道的时候，我们就在这里动态计算，然后按照key的方式设置。
     model = hydra.utils.instantiate(
-            cfg.model,
-        )
+        cfg.model,
+        input_dim=input_dim,
+        task_type=cfg.training.task_type,
+    )
     return model
 
 def load_training(checkpoint_path, cfg, train_loader, test_loader):
@@ -55,11 +62,10 @@ def load_training(checkpoint_path, cfg, train_loader, test_loader):
 
 
 
-
-@hydra.main(version_base=None, config_path="configs_batch", config_name="config")
+@hydra.main(version_base=None, config_path="configs", config_name="config")
 def main(cfg: DictConfig):
     print("开始训练流程...")
-    df,N_pas,N_dri,N_scene = load_and_preprocess_data(cfg)
+    df = load_and_preprocess_data(cfg)
     train_loader, test_loader = prepare_data(df, cfg)
     
     # 断点继续跑

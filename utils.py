@@ -163,3 +163,22 @@ def encode_multiclass_labels(train_data, test_data, target_columns):
         label_encoders[target_col] = le    
     return train_data, test_data, label_encoders
 
+
+
+def order_data_embedding(df,cat_col,num_col):
+    """
+    order_data_embedding 这是我们对离散变量和这个连续变量进行这个embeding的时候常用的一个辅助函数
+
+    :param df: 输入的数据
+    :param cat_col: 分类特征列名列表
+    :param num_col: 数值特征列名列表
+    """
+    def denseFeature(feat):
+        return {'feat': feat}
+    def sparsFeature(feat, feat_num):
+        return {'feat': feat, 'feat_num': feat_num}
+    feature_columns = [
+        [denseFeature(feat) for feat in num_col], 
+        [sparsFeature(feat, len(df[feat].unique())) for feat in cat_col]]
+    return feature_columns
+

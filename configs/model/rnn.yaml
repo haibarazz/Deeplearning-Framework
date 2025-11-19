@@ -1,0 +1,9 @@
+_target_: models.rnn_models.RNNBase
+input_dim: 32
+hidden_dim: 64
+n_layers: 2
+dropout: 0.1
+rnn_type: rnn
+bidirectional: false
+num_classes: 1
+task_type: classification
