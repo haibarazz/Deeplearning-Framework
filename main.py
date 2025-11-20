@@ -9,7 +9,7 @@ from Data_pre import load_and_preprocess_data, prepare_data
 from Feature_selected import FEATURE
 
 
-def create_model(df,cfg: DictConfig):
+def create_model(cfg: DictConfig):
     """
     动态计算输入维度并实例化模型
     """
@@ -20,7 +20,7 @@ def create_model(df,cfg: DictConfig):
     model = hydra.utils.instantiate(
         cfg.model,
         input_dim=input_dim,
-        task_type=cfg.training.task_type,
+        task_type=cfg.training_loop.task_type,
     )
     return model
 
@@ -72,7 +72,7 @@ def main(cfg: DictConfig):
     # checkpoint_path = "checkpoints/best_lstm_model.pth"
     # load_training(checkpoint_path, cfg, train_loader, test_loader)
 
-    model = create_model(df,cfg)
+    model = create_model(cfg)
     trainer = BaseTrainer(model, cfg)
     # 开始训练
     trainer.train(train_loader, test_loader)

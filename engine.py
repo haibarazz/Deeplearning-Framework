@@ -10,36 +10,35 @@ import time
 import torch.nn.functional as F
 from pathlib import Path
 from datetime import datetime
-import json
+from utils import EarlyStopping
+from abc import ABC, abstractmethod
+
+class AbstractTrainer(ABC):
+    @abstractmethod
+    def train_epoch(self, train_loader):
+        """训练一个epoch"""
+        pass
+
+    @abstractmethod
+    def evaluate_epoch(self, test_loader):
+        """评估一个epoch"""
+        pass
+
+    @abstractmethod
+    def train(self, train_loader, test_loader):
+        """主训练循环 - 从头开始"""
+        pass
+
+    @abstractmethod
+    def train_from_epoch(self, train_loader, test_loader, start_epoch=0):
+        """从指定epoch开始训练"""
+        pass
 
 
-class EarlyStopping:
-    """早停类"""
-    def __init__(self, patience=7, delta=0):
-        self.patience = patience
-        self.delta = delta
-        self.counter = 0
-        self.best_score = None
-        self.early_stop = False
-    
-    def step(self, val_loss):
-        score = -val_loss
-        
-        if self.best_score is None:
-            self.best_score = score
-        elif score < self.best_score + self.delta:
-            self.counter += 1
-            if self.counter >= self.patience:
-                self.early_stop = True
-                return True
-        else:
-            self.best_score = score
-            self.counter = 0
-        return False
-    
 
-class BaseTrainer:
-    def __init__(self, model, cfg,model_path = None):
+
+class BaseTrainer(AbstractTrainer):
+    def __init__(self, model, cfg):
         """
         这是我们核心的训练类
         
@@ -52,10 +51,11 @@ class BaseTrainer:
         self.cfg = cfg
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.model.to(self.device)
-        self.lr = cfg.training.learning_rate
-        self.epochs = cfg.training.epochs
-        self.weight_decay = cfg.training.get('weight_decay', 1e-5)
-        self.task_type = cfg.training.get('task_type', 'classification')
+        self.lr = cfg.training_loop.learning_rate
+        self.epochs = cfg.training_loop.epochs
+        self.weight_decay = cfg.training_loop.get('weight_decay', 1e-5)
+        self.task_type = cfg.training_loop.get('task_type', 'classification')
+        self.best_model_path = cfg.best_model_path
         # 优化器和损失函数
         self.optimizer = optim.AdamW(
             self.model.parameters(), 
@@ -68,10 +68,6 @@ class BaseTrainer:
             self.criterion = nn.CrossEntropyLoss()  # 多分类用CrossEntropy
         else:
             self.criterion = nn.BCEWithLogitsLoss()  # 分类用BCE
-        if model_path is None:
-            self.best_model_path = cfg.get('best_model_path', None)
-        else:
-            self.best_model_path = model_path
         # 学习率调度器
         self.scheduler = optim.lr_scheduler.ReduceLROnPlateau(
             self.optimizer, mode='min', factor=0.5, patience=10, verbose=True
