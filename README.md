@@ -1,201 +1,131 @@
-# 深度学习通用训练模板 🚀
+# 深度学习训练模板（Hydra 进阶参数管理版）🚀
 
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-red.svg)](https://pytorch.org/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Status-持续更新-yellow.svg)](https://github.com/haibarazz/zz)
+[![Hydra](https://img.shields.io/badge/Hydra-1.x-0099cc.svg)](https://hydra.cc/)
+[![Status](https://img.shields.io/badge/Status-持续更新-yellow.svg)](https://github.com/haibarazz/Deeplearning-Framework)
 
-> 一个基于 PyTorch 和 Hydra 的深度学习通用训练框架，支持快速模型开发、训练和评估。
+> 针对多模型、快速试验场景打造的训练脚手架，重点强化了 **参数管理与配置组合能力**，让「换模型/改流程」只需更新配置即可。
 
-## 📋 项目简介
+## ✨ 项目亮点
 
-这是一个通用的深度学习训练模板项目，旨在提供一个标准化、模块化的训练流程框架。通过本项目，你可以：
+- �️ **进阶参数管理**：基于 Hydra 组合式配置，`configs/model/*.yaml` 与 `configs/training_loop/*.yaml` 可自由拼装，`main.py` 中会根据配置动态计算输入维度、实例化模型并注入任务类型。
+- 🧠 **多任务友好**：同一个训练循环可在二分类、多分类、回归间切换，指标、损失函数、头部结构都会自动对齐。
+- 🪄 **断点续训即插即用**：`load_training` 会从指定 checkpoint 恢复模型、优化器及调度器状态，无缝衔接训练历史。
+- � **可追溯训练日志**：`result/` 下自动生成日志与 CSV 记录，便于后续分析与可视化。
+- 🧱 **贴合实际目录结构**：所有脚本、配置、数据、模型、输出全部按模块归位，下方结构即当前仓库真实布局。
 
-- 🎯 **快速搭建模型**：提供标准化的模型开发模板
-- ⚙️ **灵活配置管理**：使用 Hydra 进行超参数管理
-- 📊 **完整训练流程**：包含训练、验证、测试全流程
-- 🔄 **断点续训**：支持模型检查点保存和加载
-- 📈 **实时监控**：训练过程可视化和早停机制
-- 🛠️ **工具丰富**：提供数据预处理、评估指标等实用工具
-
-## 🏗️ 项目结构
+## 🗂️ 项目结构
 
 ```
-通用的模板/
-├── config/                  # 配置文件目录
-│   ├── config.yaml         # 主配置文件
-│   └── models/             # 模型配置目录
-│       ├── model1.yaml     # 模型1配置
-│       └── model2.yaml     # 模型2配置
-├── dataset/                # 数据集目录
-│   └── data.csv           # 示例数据
-├── models/                 # 模型定义目录
-│   ├── model_utils.py     # 模型工具函数
-│   ├── model1.py          # 模型1实现
-│   └── model2.py          # 模型2实现
-├── checkpoints/           # 模型检查点保存目录
-├── Data_pre.py            # 数据预处理模块
-├── engine.py              # 训练引擎核心代码
-├── main.py                # 主程序入口
-├── utils.py               # 通用工具函数
-└── README.md              # 项目说明文档
+Deeplearning-Framework/
+├── configs/
+│   ├── config.yaml                 # 顶层入口配置（defaults 组合）
+│   ├── model/                      # 模型超参组（lstm、gru、transformer...）
+│   └── training_loop/              # 训练/优化策略（learning rate、epoch 等）
+├── dataset/
+│   └── data.csv                    # 示例数据
+├── models/
+│   ├── rnn_models.py               # RNN/GRU/LSTM/Transformer 统一实现
+│   ├── model1.py / model2.py       # 自定义样例模型
+│   └── model_utils.py              # 额外工具
+├── checkpoints/                    # 断点权重输出
+├── outputs/                        # Hydra 默认输出（保留历史 log）
+├── result/                         # 自定义训练日志与指标记录
+├── Data_pre.py                     # 数据加载+特征工程
+├── Dataset.py                      # Dataset 封装
+├── Feature_selected.py             # 特征列定义
+├── engine.py                       # 训练/验证流程 + 指标
+├── main.py                         # 入口，负责组合配置与启动训练
+├── utils.py                        # EarlyStopping、LR 调度等
+├── requirements.txt
+└── README.md
 ```
 
-## ✨ 主要特性
+## 🚀 快速上手
 
-### 1. 基于 Hydra 的配置管理
-- 支持多配置文件组合
-- 命令行参数覆盖
-- 配置版本管理
+1. **安装依赖**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-### 2. 模块化训练流程
-- **数据预处理**：标准化的数据加载和预处理流程
-- **模型训练**：支持分类和回归任务
-- **模型评估**：丰富的评估指标（Accuracy, F1, AUC, MCC等）
-- **早停机制**：防止过拟合
-- **学习率调度**：自动调整学习率
+2. **运行默认实验**（默认 Transformer + classification）
+   ```bash
+   python main.py
+   ```
 
-### 3. 灵活的模型切换
-只需修改配置文件即可切换不同模型，无需改动代码：
-```yaml
-defaults:
-  - model: model1  # 切换为 model2 即可使用不同模型
-```
+3. **替换模型或训练策略**
+   ```bash
+   python main.py model=lstm training_loop=default
+   python main.py model=gru training_loop=trainer/base
+   ```
 
-### 4. 断点续训
-支持从检查点恢复训练，节省时间和资源：
-```python
-python main.py checkpoint_path=checkpoints/model.pth
-```
+4. **调整单个超参**（所有字段均可在命令行覆盖）
+   ```bash
+   python main.py training_loop.learning_rate=3e-4 training_loop.batch_size=256
+   ```
 
-## 🚀 快速开始
+5. **断点续训**
+   ```bash
+   python main.py resume.checkpoint=checkpoints/best_lstm_model.pth
+   ```
 
-### 环境要求
+## 🎛️ 配置体系（参数管理升级点）
 
-- Python 3.8+
-- PyTorch 2.0+
-- CUDA 11.0+ (可选，用于GPU加速)
+- `configs/config.yaml` 使用 Hydra `defaults` 声明组合：
+  ```yaml
+  defaults:
+    - model: transformer
+    - training_loop: default
+    - trainer: base
+    - _self_
+  ```
+- 模型组内只需关注自身超参（输入维度由 `main.py` 在运行时根据 `Feature_selected.py` 自动计算，不再写死）。
+- 训练循环配置专注在 `batch_size / train_ratio / random_state / optimizer 超参`，与模型解耦。
+- `best_model_path`、`log_path` 等公共路径统一放在主配置，方便所有组合共享。
+- 通过 `OmegaConf` + `hydra.utils.instantiate`，新增模型/训练策略只需添加 YAML 文件并在 `defaults` 中引用，无需修改 Python 代码。
 
-### 安装依赖
+## 🧰 训练流程速览
 
-```bash
-pip install -r requirements.txt
-```
+1. `Data_pre.py`：解析配置路径 → 读取 CSV → split → 标准化/编码 → 构建 `BaseDataset`。
+2. `models/rnn_models.py`：基于配置动态实例化 RNN/GRU/LSTM/Transformer，自动匹配分类/多分类/回归输出。
+3. `engine.BaseTrainer`：
+   - 统一的 `train/train_from_epoch`，支持断点恢复。
+   - 自动调度损失函数、指标与 AUC/AUPRC/F1/MCC 等评估。
+   - `ReduceLROnPlateau` + `EarlyStopping` 双保险。
+   - 日志 & 指标 CSV 落地，方便可视化或追溯。
 
-主要依赖包：
-- torch
-- hydra-core
-- pandas
-- numpy
-- scikit-learn
-- tqdm
+## � 扩展指引
 
-### 运行示例
+- **新增模型**：在 `models/` 下实现 → `configs/model/xxx.yaml` 中声明 `_target_` + 超参 → 在命令行 `model=xxx` 即可使用。
+- **新增训练策略**：在 `configs/training_loop/` 添加 YAML（如不同的 learning rate、patience、task_type），默认 `main.py` 会读取并自动适配。
+- **新增数据流程**：
+  - 常规结构直接在 `Data_pre.py` 扩展函数或新增模块。
+  - 复杂场景可以通过即将上线的「数据流程配置组」将 time-series / tabular / 多标签 等策略标准化（见下方路线图）。
 
-1. **训练模型**
-```bash
-python main.py
-```
+## 🧭 路线图（即将上线）
 
-2. **使用不同配置**
-```bash
-python main.py model=model2 training.epochs=200
-```
+- [x] Hydra 组合式参数管理、日志持久化
+- [x] RNN/GRU/LSTM/Transformer 模型族
+- [ ] 各种图神经网络的模型 GCN，GAT，GraphSAGE 等
+- [ ] 推荐系统模型库：Wide&Deep、DeepFM、TabNet、Temporal Fusion Transformer 等
+- [ ] 一个benchmark文件夹，可以在你的任务上创建benchmark
+- [ ] 超参搜索（Hydra Sweeper + Optuna）
 
-3. **从检查点恢复**
-```bash
-python main.py checkpoint_path=checkpoints/model.pth
-```
-
-4. **修改超参数**
-```bash
-python main.py training.learning_rate=0.0001 data.batch_size=64
-```
-
-## 📝 配置说明
-
-### 主配置文件 (config.yaml)
-
-```yaml
-# 数据配置
-data:
-  data_dir: "dataset/data.csv"
-  batch_size: 128
-  train_ratio: 0.8
-
-# 训练配置
-training:
-  learning_rate: 0.001
-  epochs: 150
-  weight_decay: 5e-5
-  early_stop_patience: 20
-  task_type: classification  # classification 或 regression
-
-# 设备配置
-device: "cuda"  # cuda 或 cpu
-```
-
-### 模型配置示例 (models/model1.yaml)
-
-```yaml
-_target_: models.model1.Mymodel1
-input_dim: 10
-hidden_dim: 64
-n_layers: 3
-dropout: 0.3
-```
-
-## 🔧 自定义开发
-
-### 添加新模型
-
-1. 在 `models/` 目录下创建新的模型文件
-2. 在 `config/models/` 下添加对应配置文件
-3. 在主配置中切换模型
-
-### 自定义数据处理
-
-修改 `Data_pre.py` 中的 `load_and_preprocess_data` 函数以适应你的数据格式。
-
-### 添加新的评估指标
-
-在 `engine.py` 的 `BaseTrainer` 类中添加自定义评估函数。
-
-## 📊 支持的评估指标
-
-- **分类任务**：Accuracy, Precision, Recall, F1-Score, AUC, MCC, AUPRC
-- **回归任务**：MSE, MAE, RMSE, R²
-- **自定义指标**：可扩展
-
-## 🛣️ 开发路线图
-
-- [x] 基础训练框架
-- [x] 多模型支持
-- [x] 断点续训功能
-- [x] 早停和学习率调度
-- [ ] TensorBoard 集成
-- [ ] 分布式训练支持
-- [ ] 更多预训练模型
-- [ ] 自动超参数调优
-- [ ] 模型可解释性工具
-- [ ] Docker 容器化部署
-
-> **注意**：本项目将持续更新和维护，欢迎提出建议和贡献代码！
+欢迎在 Issue 中提交你希望优先支持的模型与流程 🙌
 
 ## 🤝 贡献指南
 
-欢迎贡献代码、报告问题或提出新功能建议！
-
-1. Fork 本仓库
-2. 创建你的特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交你的改动 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 开启一个 Pull Request
+1. Fork 仓库并创建分支：`git checkout -b feature/awesome`
+2. 根据需要新增配置文件或 Python 模块
+3. 运行 `python main.py` 确认无误
+4. 提交 PR，并说明修改的配置组合/训练场景
 
 ## 📮 联系方式
 
-如有问题或建议，欢迎通过以下方式联系：
 - Email: 2812156857@qq.com
-⭐ 如果这个项目对你有帮助，欢迎给个 Star！
+- Issues: 欢迎在 GitHub Repo 中沟通
 
-**最后更新时间**: 2025年11月7日
+如果该模板对你有帮助，欢迎 star ⭐ 支持我们继续完善更多模型与数据流程！
+
+**最后更新时间**：2025-11-20

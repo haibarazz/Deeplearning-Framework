@@ -5,19 +5,13 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, Dataset
 from Feature_selected import FEATURE
 from Dataset import BaseDataset
+from hydra.utils import to_absolute_path  # 新增
 """
 准备数据的一个流程
 读取数据-数据集划分-特征归一化-dataset构建
 """
 
 
-def load_and_preprocess_data(cfg):
-    """数据加载和预处理"""
-    print("开始加载和预处理数据...")
-    df = pd.read_csv(cfg.data.data_dir)
-    # df = df.iloc[:1000]  # 这个可以帮助我们快速测试自己的模型是否有bug
-    # 这里可以用一些就是数据的一些map的操作
-    return df
 
 
 def data_process(train_data, test_data, cat_features, num_features):
@@ -69,11 +63,24 @@ def data_process(train_data, test_data, cat_features, num_features):
 
 
 
-def prepare_data(df,cfg):
 
-    batch_size = cfg.data.batch_size
-    train_ratio = cfg.data.train_ratio
-    random_state = cfg.data.random_state
+def load_and_preprocess_data(cfg):
+    """数据加载和预处理"""
+    print("开始加载和预处理数据...")
+    data_path = to_absolute_path(cfg.data_dir)  # 将相对路径解析为项目根目录下的绝对路径
+    print(f"读取数据: {data_path}")
+    df = pd.read_csv(data_path)
+    # df = df.iloc[:1000]  # 这个可以帮助我们快速测试自己的模型是否有bug
+    # 这里可以用一些就是数据的一些map的操作
+    return df
+
+
+
+def prepare_data(df,cfg):
+    # 如果后面又其他需求的话，就是这个函数里面改
+    batch_size = cfg.training_loop.batch_size
+    train_ratio = cfg.training_loop.train_ratio
+    random_state = cfg.training_loop.random_state
 
 
     # 划分训练测试集
